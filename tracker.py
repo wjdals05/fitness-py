@@ -24,4 +24,4 @@ def save_entry(data: dict):
 def load_all_data():
     _init_db()
     try: return pd.read_csv(CSV_PATH)
-    except: return pd.DataFrame(columns=COLUMNS)`
+    except: return pd.DataFrame(columns=COLUMNS)
