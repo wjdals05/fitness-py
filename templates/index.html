@@ -1,0 +1,109 @@
+`<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Health AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8fafc; display: flex; justify-content: center; }
+        .container { max-width: 600px; width: 100%; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { text-align:center; color:#6366f1; margin-bottom: 20px; }
+        
+        /* 입력 폼 스타일 */
+        .input-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; margin-top: 5px; }
+        button { width: 100%; padding: 15px; background: #6366f1; color: white; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #4f46e5; }
+        
+        /* 결과창 스타일 */
+        .result-box { background: #e0e7ff; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; border: 1px solid #c7d2fe; }
+        img { width: 100%; margin-top: 15px; border-radius: 10px; border: 1px solid #eee; }
+        
+        /* 루틴 추천 섹션 스타일 */
+        .routine-section { margin-top: 30px; border-top: 2px dashed #eee; padding-top: 20px; }
+        .tag { display: inline-block; background: #eff6ff; color: #3b82f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-dumbbell"></i> Smart AI Coach</h1>
+
+        <div class="input-group">
+            <span class="tag">Step 1</span> <strong>운동 기록 & AI 분석</strong>
+            <input type="text" id="exercise" placeholder="운동 이름 (예: 스쿼트)">
+            <input type="number" id="weight" placeholder="무게 (kg)">
+            <input type="number" id="reps" placeholder="횟수">
+            <input type="text" id="feedback" placeholder="오늘 느낌 (AI 분석용)">
+            <button onclick="sendLog()">기록 저장 및 분석</button>
+        </div>
+
+        <div id="log_result" class="result-box">
+            <h3 id="ai_msg" style="margin:0 0 10px 0;"></h3>
+            <p id="rec_msg" style="margin:0; color:#4338ca; font-weight:600;"></p>
+        </div>
+
+        <div class="routine-section">
+            <span class="tag">Step 2</span> <strong>오늘의 루틴 추천받기</strong>
+            <div style="display:flex; gap:10px;">
+                <select id="level">
+                    <option value="beginner">초보자 (헬린이)</option>
+                    <option value="advanced">숙련자 (헬창)</option>
+                </select>
+                <select id="goal">
+                    <option value="muscle">근육 증가</option>
+                    <option value="diet">다이어트</option>
+                </select>
+            </div>
+            <button onclick="getRoutine()" style="background:#10b981;">루틴 생성하기</button>
+            <div id="routine_result" class="result-box" style="background:#ecfdf5; border-color:#a7f3d0; color:#047857; font-weight:bold;"></div>
+        </div>
+
+        <img src="/api/graph/weekly" id="img1">
+        <img src="/api/graph/area" id="img2">
+    </div>
+
+    <script>
+        // 운동 기록 전송
+        async function sendLog() {
+            const data = { 
+                exercise: document.getElementById('exercise').value, 
+                weight: document.getElementById('weight').value, 
+                reps: document.getElementById('reps').value, 
+                feedback: document.getElementById('feedback').value 
+            };
+            const res = await fetch('/api/log', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            const result = await res.json();
+            
+            const box = document.getElementById('log_result');
+            box.style.display = 'block';
+            document.getElementById('ai_msg').innerText = `🤖 AI 분석: ${result.ai_analysis.label} (${result.ai_analysis.score}점)`;
+            document.getElementById('rec_msg').innerText = `💡 추천: 다음엔 ${result.recommended_weight}kg 도전!`;
+            
+            refreshGraphs();
+        }
+
+        // 루틴 추천 요청 (5번 팀원이 만든 기능)
+        async function getRoutine() {
+            const level = document.getElementById('level').value;
+            const goal = document.getElementById('goal').value;
+            
+            const res = await fetch('/api/routine', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ level, goal }) 
+            });
+            const result = await res.json();
+            
+            const box = document.getElementById('routine_result');
+            box.style.display = 'block';
+            box.innerText = result.routine;
+        }
+
+        function refreshGraphs() {
+            const t = new Date().getTime();
+            document.getElementById('img1').src = `/api/graph/weekly?t=${t}`; 
+            document.getElementById('img2').src = `/api/graph/area?t=${t}`;
+        }
+    </script>
+</body>
+</html>
